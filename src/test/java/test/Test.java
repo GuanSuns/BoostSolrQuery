@@ -12,13 +12,13 @@ import java.util.List;
  * Created by guanl on 6/12/2017.
  */
 public class Test {
-
         @org.junit.Test
         public void main(){
         Solr solr = new Solr();
-        Redis redis = new Redis();
+        ArrayList<String> queryTerms = new ArrayList<>();
+        ArrayList<String> recommendation = new ArrayList<>();
 
-        SolrDocumentList docList = solr.doQuery("updated test");
+        SolrDocumentList docList = solr.doQuery("taylor swift", queryTerms, recommendation);
 
         if(docList != null){
             for(SolrDocument doc : docList){
@@ -28,7 +28,7 @@ public class Test {
 
         List<Integer> selected = new ArrayList<>();
         selected.add(2);
-        solr.boostDocs(docList, selected);
+        //solr.boostDocs(docList, selected, queryTerms);
     }
 
     private static void printDoc(SolrDocument doc){

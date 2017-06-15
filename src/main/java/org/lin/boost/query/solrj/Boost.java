@@ -21,7 +21,7 @@ public class Boost {
         this.client = client;
     }
 
-    public void doBoost(SolrDocumentList docList, List<Integer> selectedItem) throws Exception{
+    public void doBoost(SolrDocumentList docList, List<Integer> selectedItem, ArrayList<String> queryTerms) throws Exception{
         if(client == null || selectedItem == null || docList == null){
             throw new Exception("Uninitialized Variables");
         }
@@ -50,6 +50,17 @@ public class Boost {
                 }
             }
         }
+
+        /*
+        if(queryTerms != null){
+            for(String term: queryTerms){
+                if(!boostedTerms.contains(term)){
+                    boostedTerms.add(term);
+                    boostTerm(term);
+                }
+            }
+        }
+        */
 
         doDegrade(docList, smallestIndex);
     }
@@ -81,19 +92,19 @@ public class Boost {
     private void boostTerm(String term){
         double k = Math.log(SolrConfig.C - 1.0);
         double boost = Double.valueOf(Redis.getBoost(term));
-        double x = k - Math.log(SolrConfig.C/boost - 1.0) + SolrConfig.gradient;
-        boost = SolrConfig.C/(1+Math.exp(-x+k));
+        double x = (k - Math.log(SolrConfig.C/boost - 1.0))/SolrConfig.m + SolrConfig.gradient;
+        boost = SolrConfig.C/(1+Math.exp(-SolrConfig.m*x+k));
         Redis.setValue(term, boost+"");
     }
 
     private void degradeTerm(String term){
         double k = Math.log(SolrConfig.C - 1.0);
         double boost = Double.valueOf(Redis.getBoost(term));
-        double x = k - Math.log(SolrConfig.C/boost - 1.0) - SolrConfig.gradient;
+        double x = (k - Math.log(SolrConfig.C/boost - 1.0))/SolrConfig.m - SolrConfig.gradient;
         if(x < 0){
             x = 0;
         }
-        boost = SolrConfig.C/(1+Math.exp(-x+k));
+        boost = SolrConfig.C/(1+Math.exp(-SolrConfig.m*x+k));
         Redis.setValue(term, boost+"");
     }
 

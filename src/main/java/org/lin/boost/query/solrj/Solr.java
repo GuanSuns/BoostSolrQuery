@@ -5,6 +5,7 @@ import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.common.SolrDocumentList;
 import org.lin.boost.query.config.SolrConfig;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -13,11 +14,11 @@ import java.util.List;
 public class Solr {
     private static final SolrClient client = new HttpSolrClient.Builder(SolrConfig.solrURL).build();
 
-    public SolrDocumentList doQuery(String queryString){
+    public SolrDocumentList doQuery(String queryString, ArrayList<String> queryTerms, ArrayList<String> recommendation){
         Query query = new Query(client);
         SolrDocumentList results;
         try{
-            results = query.doQuery(queryString);
+            results = query.doQuery(queryString, queryTerms, recommendation);
         }catch (Exception e){
             e.printStackTrace();
             return null;
@@ -26,10 +27,10 @@ public class Solr {
         return results;
     }
 
-    public void boostDocs(SolrDocumentList docList, List<Integer> selectedItem){
+    public void boostDocs(SolrDocumentList docList, List<Integer> selectedItem, ArrayList<String> queryTerms){
         Boost boost = new Boost(client);
         try{
-            boost.doBoost(docList, selectedItem);
+            boost.doBoost(docList, selectedItem, queryTerms);
         }catch (Exception e){
             e.printStackTrace();
         }

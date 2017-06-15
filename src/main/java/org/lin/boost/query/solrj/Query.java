@@ -91,29 +91,36 @@ public class Query {
         return termInfo;
     }
 
-    public SolrDocumentList doQuery(String queryString) throws Exception{
-        if(client == null){
-            throw new Exception("Uninitialized Client");
+    public SolrDocumentList doQuery(String queryString
+            , ArrayList<String> queryTerms
+            , ArrayList<String> recommendation) throws Exception{
+        if(client == null || queryTerms == null || recommendation == null){
+            throw new Exception("Uninitialized Client or termList");
         }
 
         Analysis analysis = new Analysis(client);
-        ArrayList<String> terms = analysis.getQueryTerms(queryString);
-        ArrayList<Double> boosts = analysis.getTermsBoost(terms);
-        if(terms.size() != boosts.size()){
+        Suggest suggest = new Suggest();
+        queryTerms.addAll(analysis.getQueryTerms(queryString));
+        recommendation.addAll(suggest.getSuggestion(queryTerms));
+
+        //System.out.println(recommendation);
+
+        ArrayList<Double> boosts = analysis.getTermsBoost(queryTerms);
+        if(queryTerms.size() != boosts.size()){
             throw new Exception("Different length of terms and boosts");
         }
 
         String newQueryString = SolrConfig.engineSearchField + ":(";
-        for(int i=0; i<terms.size(); i++){
+        for(int i=0; i<queryTerms.size(); i++){
             if(i==0){
                 newQueryString = newQueryString
-                        + terms.get(i)
+                        + queryTerms.get(i)
                         + "^"
                         + boosts.get(i);
             }else{
-                newQueryString = " "
-                        + newQueryString
-                        + terms.get(i)
+                newQueryString = newQueryString
+                        + " "
+                        + queryTerms.get(i)
                         + "^"
                         + boosts.get(i);
             }

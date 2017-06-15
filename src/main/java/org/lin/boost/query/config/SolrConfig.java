@@ -13,5 +13,10 @@ public class SolrConfig {
     public final static String fieldID = "id";
 
     public final static double gradient = 0.5;
-    public final static double C = 8.0;
+    public final static double C = 16;
+    public final static double m = 0.5;
+
+    public final static String solrSuggestURL = "http://localhost:8983/solr/suggestion_core";
+    public final static String solrSuggestSearchField = "terms";
+    public final static int suggestRowSize = 20;
 }
