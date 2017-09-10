@@ -1,6 +1,7 @@
 package org.lin.boost.query.redis;
 
 import org.lin.boost.query.config.RedisConfig;
+import org.tartarus.martin.Stemmer;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
@@ -11,7 +12,7 @@ import redis.clients.jedis.JedisPoolConfig;
 public class Redis {
     private static JedisPool pool = null;
 
-    public static JedisPool getPool(){
+    private static JedisPool getPool(){
         if(pool == null){
             JedisPoolConfig config = new JedisPoolConfig();
             config.setMaxIdle(RedisConfig.maxIdle);
@@ -22,14 +23,14 @@ public class Redis {
     }
 
     @SuppressWarnings("deprecation")
-    public static void returnResource(JedisPool pool, Jedis jedis){
+    private static void returnResource(JedisPool pool, Jedis jedis){
         if(jedis != null){
             pool.returnResource(jedis);
         }
     }
 
     @SuppressWarnings("deprecation")
-    public static String getValue(String key){
+    private static String getValue(String key){
         JedisPool pool = null;
         Jedis jedis = null;
         String value = null;
@@ -74,14 +75,29 @@ public class Redis {
         }
     }
 
-    public static String getBoost(String term){
-        String boost = getValue(term);
+
+    public static void setBoostValue(String term, String value){
+        Stemmer stemmer = new Stemmer();
+        stemmer.add(term.toLowerCase().toCharArray(), term.length());
+        String stemWord = stemmer.toString();
+
+        setValue(stemWord, value);
+    }
+
+    public static String getBoostValue(String term){
+        Stemmer stemmer = new Stemmer();
+        stemmer.add(term.toLowerCase().toCharArray(), term.length());
+        String stemWord = stemmer.toString();
+
+        String boost = getValue(stemWord);
         if(boost == null){
-            setValue(term, "1.0");
+            setBoostValue(term, "1.0");
             return "1.0";
         }else{
             return boost;
         }
     }
+
+
 }
 

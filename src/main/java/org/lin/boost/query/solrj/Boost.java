@@ -40,7 +40,7 @@ public class Boost {
             SolrDocument doc = docList.get(j);
             String id = doc.getFieldValue(SolrConfig.fieldID).toString();
 
-            ArrayList<String> keywords = analysis.extractKeywords(Integer.valueOf(id));
+            ArrayList<String> keywords = analysis.extractKeywordsByTf(Integer.valueOf(id));
 
             for (int k=0; k<keywords.size(); k++){
                 String term = keywords.get(k);
@@ -50,17 +50,6 @@ public class Boost {
                 }
             }
         }
-
-        /*
-        if(queryTerms != null){
-            for(String term: queryTerms){
-                if(!boostedTerms.contains(term)){
-                    boostedTerms.add(term);
-                    boostTerm(term);
-                }
-            }
-        }
-        */
 
         doDegrade(docList, smallestIndex);
     }
@@ -77,7 +66,7 @@ public class Boost {
         for(int i=0; i<iDegrade; i++){
             SolrDocument doc = docList.get(i);
             String id = doc.getFieldValue(SolrConfig.fieldID).toString();
-            ArrayList<String> keywords = analysis.extractKeywords(Integer.valueOf(id));
+            ArrayList<String> keywords = analysis.extractKeywordsByTf(Integer.valueOf(id));
 
             for (int j=0; j<keywords.size(); j++){
                 String term = keywords.get(j);
@@ -91,26 +80,26 @@ public class Boost {
 
     private void boostTerm(String term){
         double k = Math.log(SolrConfig.C - 1.0);
-        double boost = Double.valueOf(Redis.getBoost(term));
+        double boost = Double.valueOf(Redis.getBoostValue(term));
         double x = (k - Math.log(SolrConfig.C/boost - 1.0))/SolrConfig.m + SolrConfig.gradient;
         boost = SolrConfig.C/(1+Math.exp(-SolrConfig.m*x+k));
-        Redis.setValue(term, boost+"");
+        Redis.setBoostValue(term, boost+"");
     }
 
     private void degradeTerm(String term){
         double k = Math.log(SolrConfig.C - 1.0);
-        double boost = Double.valueOf(Redis.getBoost(term));
+        double boost = Double.valueOf(Redis.getBoostValue(term));
         double x = (k - Math.log(SolrConfig.C/boost - 1.0))/SolrConfig.m - SolrConfig.gradient;
         if(x < 0){
             x = 0;
         }
         boost = SolrConfig.C/(1+Math.exp(-SolrConfig.m*x+k));
-        Redis.setValue(term, boost+"");
+        Redis.setBoostValue(term, boost+"");
     }
 
     private static void printSetTerms(Set<String> Terms){
         for(String term: Terms){
-            double boost = Double.valueOf(Redis.getBoost(term));
+            double boost = Double.valueOf(Redis.getBoostValue(term));
             System.out.println("Term: " + term + ", Boost: " + boost);
         }
     }

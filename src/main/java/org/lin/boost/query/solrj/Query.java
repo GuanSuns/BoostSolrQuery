@@ -3,6 +3,7 @@ package org.lin.boost.query.solrj;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.response.QueryResponse;
+import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.util.NamedList;
 import org.lin.boost.query.config.SolrConfig;
@@ -28,6 +29,101 @@ public class Query {
     public void setClient(SolrClient client){
         this.client = client;
     }
+
+    public ArrayList<SolrDocumentWithScore> doQuery(String queryString
+            , ArrayList<String> queryTerms
+            , ArrayList<String> recommendation) throws Exception{
+
+        if(client == null || queryTerms == null || recommendation == null){
+            throw new Exception("Uninitialized Client or termList");
+        }
+
+        Analysis analysis = new Analysis(client);
+        queryTerms.addAll(analysis.getQueryTerms(queryString));
+
+        ArrayList<Double> boosts = analysis.getTermsBoost(queryTerms);
+        if(queryTerms.size() != boosts.size()){
+            throw new Exception("Different length of query terms and boost values");
+        }
+
+        String newQueryString = SolrConfig.engineSearchField + ":(";
+        for(int i=0; i<queryTerms.size(); i++){
+            if(i==0){
+                newQueryString = newQueryString
+                        + queryTerms.get(i)
+                        + "^"
+                        + boosts.get(i);
+            }else{
+                newQueryString = newQueryString
+                        + " "
+                        + queryTerms.get(i)
+                        + "^"
+                        + boosts.get(i);
+            }
+        }
+        newQueryString = newQueryString + ")";
+
+        if(SolrConfig.debug){
+            System.out.println("Begin querying - " + newQueryString);
+        }
+
+        SolrQuery solrQuery = new SolrQuery();
+        solrQuery.setStart(0);
+        solrQuery.set("fl", "*,score");
+        solrQuery.setRows(SolrConfig.rowSize);
+        solrQuery.setQuery(newQueryString);
+        QueryResponse response = client.query(solrQuery);
+
+        ArrayList<SolrDocument> unorderedDocuments = response.getResults();
+        if(unorderedDocuments == null){
+            return new ArrayList<>(0);
+        }
+
+        if(SolrConfig.debug){
+            System.out.println("Begin sorting documents based on keywords, documents size: " + unorderedDocuments.size());
+        }
+
+        return getSortedSolrDocumentBaseOnKeywords(unorderedDocuments);
+    }
+
+    private ArrayList<SolrDocumentWithScore> getSortedSolrDocumentBaseOnKeywords(ArrayList<SolrDocument> unorderedDocuments){
+        ArrayList<SolrDocumentWithScore> solrDocumentsWithScore = new ArrayList<>();
+
+        //Calculate keywords scores and add to the documents' original scores
+        for(SolrDocument solrDocument : unorderedDocuments){
+            Float solrScore = (Float)solrDocument.getFieldValue(SolrConfig.fieldScore);
+            Float cumulativeScore = solrScore;
+            String[] keywords = Analysis.getKeywords(solrDocument);
+
+            for(String keyword : keywords){
+                Float termBoost = Float.valueOf(Redis.getBoostValue(keyword));
+                cumulativeScore = cumulativeScore * termBoost;
+            }
+
+            SolrDocumentWithScore solrDocumentWithScore = new SolrDocumentWithScore();
+            solrDocumentWithScore.setScore(cumulativeScore);
+            solrDocumentWithScore.setSolrDocument(solrDocument);
+
+            solrDocumentsWithScore.add(solrDocumentWithScore);
+
+            if(SolrConfig.debug){
+                System.out.println("Processing document " + solrDocument.getFieldValue(SolrConfig.fieldID)
+                        + ", original score - " + solrScore
+                        + ", # of keywords - " + keywords.length
+                        + ", cumulative score - " + cumulativeScore);
+            }
+        }
+
+        solrDocumentsWithScore.sort(solrDocumentScoreComparator);
+        return solrDocumentsWithScore;
+    }
+
+    private static Comparator<SolrDocumentWithScore> solrDocumentScoreComparator = new Comparator<SolrDocumentWithScore>(){
+        @Override
+        public int compare(SolrDocumentWithScore doc1, SolrDocumentWithScore doc2) {
+            return (int) (doc2.getScore() - doc1.getScore());
+        }
+    };
 
     public SolrDocumentList getAllDocs() throws Exception{
         if(client == null){
@@ -67,17 +163,17 @@ public class Query {
 
         for(int i=0; i < terms.size(); i++){
             TermInfo termInfo = getTermInfo(i, terms);
-            termInfo.TFIDF = termInfo.TFIDF * Double.valueOf(Redis.getBoost(termInfo.term));
+            termInfo.TFIDF = termInfo.TFIDF * Double.valueOf(Redis.getBoostValue(termInfo.term));
             termInfos.add(termInfo);
         }
 
         return termInfos;
     }
 
-    public static Comparator<TermInfo> termInfoComparator = new Comparator<TermInfo>(){
+    private static Comparator<TermInfo> termInfoComparator = new Comparator<TermInfo>(){
         @Override
         public int compare(TermInfo t1, TermInfo t2) {
-            return (int) (t2.getTFIDF() - t2.getTFIDF());
+            return (int) (t2.getTFIDF() - t1.getTFIDF());
         }
     };
 
@@ -91,48 +187,5 @@ public class Query {
         return termInfo;
     }
 
-    public SolrDocumentList doQuery(String queryString
-            , ArrayList<String> queryTerms
-            , ArrayList<String> recommendation) throws Exception{
-        if(client == null || queryTerms == null || recommendation == null){
-            throw new Exception("Uninitialized Client or termList");
-        }
 
-        Analysis analysis = new Analysis(client);
-        Suggest suggest = new Suggest();
-        queryTerms.addAll(analysis.getQueryTerms(queryString));
-        recommendation.addAll(suggest.getSuggestion(queryTerms));
-
-        //System.out.println(recommendation);
-
-        ArrayList<Double> boosts = analysis.getTermsBoost(queryTerms);
-        if(queryTerms.size() != boosts.size()){
-            throw new Exception("Different length of terms and boosts");
-        }
-
-        String newQueryString = SolrConfig.engineSearchField + ":(";
-        for(int i=0; i<queryTerms.size(); i++){
-            if(i==0){
-                newQueryString = newQueryString
-                        + queryTerms.get(i)
-                        + "^"
-                        + boosts.get(i);
-            }else{
-                newQueryString = newQueryString
-                        + " "
-                        + queryTerms.get(i)
-                        + "^"
-                        + boosts.get(i);
-            }
-        }
-        newQueryString = newQueryString + ")";
-
-        SolrQuery solrQuery = new SolrQuery();
-        solrQuery.setStart(0);
-        solrQuery.setRows(SolrConfig.rowSize);
-        solrQuery.setQuery(newQueryString);
-        QueryResponse response = client.query(solrQuery);
-
-        return response.getResults();
-    }
 }

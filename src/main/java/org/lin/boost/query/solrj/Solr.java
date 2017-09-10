@@ -14,9 +14,15 @@ import java.util.List;
 public class Solr {
     private static final SolrClient client = new HttpSolrClient.Builder(SolrConfig.solrURL).build();
 
-    public SolrDocumentList doQuery(String queryString, ArrayList<String> queryTerms, ArrayList<String> recommendation){
+    /** The ArrayList queryTerms and  recommendation should be
+     * empty ArrayList used to receive result from Solr Query,
+     * so that relative information could be printed out somewhere.
+     *
+     * Currently, only support space-separated query terms
+     **/
+    public ArrayList<SolrDocumentWithScore> doQuery(String queryString, ArrayList<String> queryTerms, ArrayList<String> recommendation){
         Query query = new Query(client);
-        SolrDocumentList results;
+        ArrayList<SolrDocumentWithScore> results;
         try{
             results = query.doQuery(queryString, queryTerms, recommendation);
         }catch (Exception e){
@@ -34,5 +40,9 @@ public class Solr {
         }catch (Exception e){
             e.printStackTrace();
         }
+    }
+
+    public SolrClient getClient(){
+        return Solr.client;
     }
 }

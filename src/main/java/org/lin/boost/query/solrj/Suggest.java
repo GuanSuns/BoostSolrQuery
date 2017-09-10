@@ -54,8 +54,6 @@ public class Suggest {
         solrQuery.setQuery(newQueryString);
         QueryResponse response = suggestClient.query(solrQuery);
 
-        //System.out.println(response);
-
         SolrDocumentList suggestList = response.getResults();
 
         if(suggestList != null && suggestList.size() > 0){
