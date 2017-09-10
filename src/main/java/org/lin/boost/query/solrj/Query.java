@@ -38,10 +38,9 @@ public class Query {
             throw new Exception("Uninitialized Client or termList");
         }
 
-        Analysis analysis = new Analysis(client);
-        queryTerms.addAll(analysis.getQueryTerms(queryString));
+        queryTerms.addAll(Analysis.getQueryTerms(queryString));
 
-        ArrayList<Double> boosts = analysis.getTermsBoost(queryTerms);
+        ArrayList<Double> boosts = Analysis.getTermsBoost(queryTerms);
         if(queryTerms.size() != boosts.size()){
             throw new Exception("Different length of query terms and boost values");
         }

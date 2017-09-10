@@ -26,7 +26,7 @@ public class Analysis {
         this.client = client;
     }
 
-    public ArrayList<Double> getTermsBoost(ArrayList<String> terms){
+    public static ArrayList<Double> getTermsBoost(ArrayList<String> terms){
         List<Double> results = new ArrayList<Double>();
 
         for(int i=0; i<terms.size(); i++){

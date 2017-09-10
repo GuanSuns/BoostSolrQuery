@@ -27,6 +27,11 @@ public class SolrTest {
         for(SolrDocumentWithScore solrDocumentWithScore : results){
             printDoc(solrDocumentWithScore.getSolrDocument());
         }
+
+        ArrayList<Integer> selectedItem = new ArrayList<>();
+        selectedItem.add(2);
+        selectedItem.add(3);
+        solr.boostDocs(results, selectedItem, queryTerms);
     }
 
     private static void printDoc(SolrDocument doc){

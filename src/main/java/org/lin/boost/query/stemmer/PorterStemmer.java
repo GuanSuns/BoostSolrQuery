@@ -10,10 +10,6 @@ public class PorterStemmer {
         stemmer.stem();
         String stemWord = stemmer.toString();
 
-        if(SolrConfig.debug){
-            System.out.println("Stem " + term + " to " + stemWord);
-        }
-
         return stemWord;
     }
 }
