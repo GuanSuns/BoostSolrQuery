@@ -5,7 +5,9 @@ import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 import org.lin.boost.query.config.SolrConfig;
 import org.lin.boost.query.redis.Redis;
+import org.lin.boost.query.stemmer.PorterStemmer;
 
+import javax.sound.sampled.Port;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -21,7 +23,9 @@ public class Boost {
         this.client = client;
     }
 
-    public void doBoost(SolrDocumentList docList, List<Integer> selectedItem, ArrayList<String> queryTerms) throws Exception{
+    public void doBoost(ArrayList<SolrDocumentWithScore> docList
+            , List<Integer> selectedItem, ArrayList<String> queryTerms) throws Exception{
+
         if(client == null || selectedItem == null || docList == null){
             throw new Exception("Uninitialized Variables");
         }
@@ -30,49 +34,50 @@ public class Boost {
         }
 
         Set<String> boostedTerms = new HashSet<>();
-        Analysis analysis = new Analysis(client);
+        for(String queryTerm : queryTerms){
+            boostTerm(queryTerm);
+            boostedTerms.add(PorterStemmer.stem(queryTerm));
+        }
 
         int smallestIndex = Integer.MAX_VALUE;
         for(int i=0; i<selectedItem.size(); i++){
             int j = selectedItem.get(i);
             if(j < smallestIndex) smallestIndex = j;
 
-            SolrDocument doc = docList.get(j);
-            String id = doc.getFieldValue(SolrConfig.fieldID).toString();
+            String[] keywords = docList.get(j).getKeywords();
 
-            ArrayList<String> keywords = analysis.extractKeywordsByTf(Integer.valueOf(id));
-
-            for (int k=0; k<keywords.size(); k++){
-                String term = keywords.get(k);
-                if(!boostedTerms.contains(term)){
-                    boostedTerms.add(term);
-                    boostTerm(term);
+            for (String keyword : keywords){
+                String stemWord = PorterStemmer.stem(keyword);
+                if(!boostedTerms.contains(stemWord)){
+                    boostTerm(stemWord);
+                    boostedTerms.add(stemWord);
                 }
             }
         }
 
-        doDegrade(docList, smallestIndex);
+        doDegrade(docList, smallestIndex, boostedTerms);
     }
 
-    private void doDegrade(SolrDocumentList docList, int iDegrade) throws Exception{
+    private void doDegrade(ArrayList<SolrDocumentWithScore> docList
+            , int indexDegrade, Set<String> boostedTerms) throws Exception{
+
         if(client == null){
             throw new Exception("Uninitialized Client");
         }
-        if(iDegrade == 0) return;
+        if(indexDegrade == 0) return;
 
         Set<String> degradedTerms = new HashSet<>();
-        Analysis analysis = new Analysis(client);
 
-        for(int i=0; i<iDegrade; i++){
-            SolrDocument doc = docList.get(i);
-            String id = doc.getFieldValue(SolrConfig.fieldID).toString();
-            ArrayList<String> keywords = analysis.extractKeywordsByTf(Integer.valueOf(id));
+        for(int i=0; i<indexDegrade; i++){
+            SolrDocumentWithScore doc = docList.get(i);
+            String[] keywords = doc.getKeywords();
 
-            for (int j=0; j<keywords.size(); j++){
-                String term = keywords.get(j);
-                if(!degradedTerms.contains(term)){
-                    degradedTerms.add(term);
-                    degradeTerm(term);
+            for (String keyword : keywords){
+                String stemWord = PorterStemmer.stem(keyword);
+                if(!degradedTerms.contains(stemWord)
+                        && !boostedTerms.contains(stemWord)){
+                    degradeTerm(stemWord);
+                    degradedTerms.add(stemWord);
                 }
             }
         }

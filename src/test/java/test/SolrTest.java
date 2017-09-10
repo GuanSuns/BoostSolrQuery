@@ -3,10 +3,8 @@ package test;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.common.SolrDocument;
 import org.junit.Test;
-import org.lin.boost.query.solrj.Analysis;
 import org.lin.boost.query.solrj.Solr;
 import org.lin.boost.query.solrj.SolrDocumentWithScore;
-import org.tartarus.martin.Stemmer;
 
 import java.util.ArrayList;
 import java.util.List;

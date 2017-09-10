@@ -2,6 +2,7 @@
   <dictionary name="guanl">
     <words>
       <w>infos</w>
+      <w>stemmer</w>
     </words>
   </dictionary>
 </component>

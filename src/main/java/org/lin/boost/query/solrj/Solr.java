@@ -33,7 +33,9 @@ public class Solr {
         return results;
     }
 
-    public void boostDocs(SolrDocumentList docList, List<Integer> selectedItem, ArrayList<String> queryTerms){
+    public void boostDocs(ArrayList<SolrDocumentWithScore> docList
+            , List<Integer> selectedItem, ArrayList<String> queryTerms){
+
         Boost boost = new Boost(client);
         try{
             boost.doBoost(docList, selectedItem, queryTerms);

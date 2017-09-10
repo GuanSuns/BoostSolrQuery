@@ -103,6 +103,7 @@ public class Query {
             SolrDocumentWithScore solrDocumentWithScore = new SolrDocumentWithScore();
             solrDocumentWithScore.setScore(cumulativeScore);
             solrDocumentWithScore.setSolrDocument(solrDocument);
+            solrDocumentWithScore.setKeywords(keywords);
 
             solrDocumentsWithScore.add(solrDocumentWithScore);
 

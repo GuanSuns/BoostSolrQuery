@@ -1,6 +1,8 @@
 package org.lin.boost.query.redis;
 
 import org.lin.boost.query.config.RedisConfig;
+import org.lin.boost.query.config.SolrConfig;
+import org.lin.boost.query.stemmer.PorterStemmer;
 import org.tartarus.martin.Stemmer;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -77,17 +79,12 @@ public class Redis {
 
 
     public static void setBoostValue(String term, String value){
-        Stemmer stemmer = new Stemmer();
-        stemmer.add(term.toLowerCase().toCharArray(), term.length());
-        String stemWord = stemmer.toString();
-
+        String stemWord  = PorterStemmer.stem(term);
         setValue(stemWord, value);
     }
 
     public static String getBoostValue(String term){
-        Stemmer stemmer = new Stemmer();
-        stemmer.add(term.toLowerCase().toCharArray(), term.length());
-        String stemWord = stemmer.toString();
+        String stemWord  = PorterStemmer.stem(term);
 
         String boost = getValue(stemWord);
         if(boost == null){
