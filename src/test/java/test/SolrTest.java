@@ -21,7 +21,7 @@ public class SolrTest {
 
         ArrayList<String> queryTerms = new ArrayList<>();
         ArrayList<String> suggestions = new ArrayList<>();
-        ArrayList<SolrDocumentWithScore> results = solr.doQuery("Los Angle", queryTerms, suggestions);
+        ArrayList<SolrDocumentWithScore> results = solr.doQuery("nba", queryTerms, suggestions);
 
         System.out.println();
         for(SolrDocumentWithScore solrDocumentWithScore : results){
