@@ -3,6 +3,7 @@ package test;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.common.SolrDocument;
 import org.junit.Test;
+import org.lin.boost.query.config.SolrConfig;
 import org.lin.boost.query.solrj.Solr;
 import org.lin.boost.query.solrj.SolrDocumentWithScore;
 
@@ -18,6 +19,8 @@ public class SolrTest {
     public void main() throws Exception{
         Solr solr = new Solr();
         SolrClient client = solr.getClient();
+
+        SolrConfig.debug = false;
 
         ArrayList<String> queryTerms = new ArrayList<>();
         ArrayList<String> suggestions = new ArrayList<>();

@@ -62,7 +62,7 @@ public class Query {
         }
         newQueryString = newQueryString + ")";
 
-        if(SolrConfig.debug){
+        if(SolrConfig.debug || SolrConfig.info){
             System.out.println("Begin querying - " + newQueryString);
         }
 
@@ -78,7 +78,7 @@ public class Query {
             return new ArrayList<>(0);
         }
 
-        if(SolrConfig.debug){
+        if(SolrConfig.debug || SolrConfig.info){
             System.out.println("Begin sorting documents based on keywords, documents size: " + unorderedDocuments.size());
         }
 
