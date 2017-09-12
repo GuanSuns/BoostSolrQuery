@@ -1,8 +1,6 @@
 package org.lin.boost.query.stemmer;
 
 import org.lin.boost.query.config.PorterStemmerConfig;
-import org.lin.boost.query.config.SolrConfig;
-import org.lin.boost.query.solrj.Solr;
 import org.tartarus.martin.Stemmer;
 
 import java.util.HashMap;

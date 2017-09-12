@@ -96,6 +96,11 @@ public class Query {
 
             for(String keyword : keywords){
                 Float termBoost = Float.valueOf(Redis.getBoostValue(keyword));
+
+                if(cumulativeScore >= Float.MAX_VALUE/SolrConfig.C){
+                    break;
+                }
+
                 cumulativeScore = cumulativeScore * termBoost;
             }
 
